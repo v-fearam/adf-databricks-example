@@ -1,12 +1,14 @@
 # Project Setup Guide
 
 ## Requirements
+
 - **Azure CLI**: Ensure you have the Azure Command-Line Interface (CLI) installed.
 - **Bash or Windows Subsystem for Linux (WSL)**: You'll need a Bash-compatible shell environment.
 
 ## Steps
 
 ### 1. Azure Login
+
 First, log in to your Azure account using the following command:
 
 ```bash
@@ -16,6 +18,7 @@ az login
 ```
 
 ### 2. Set Environment Variables
+
 Define the necessary environment variables for your project:
 
 ```bash
@@ -25,6 +28,7 @@ export RESOURCEGROUP=${RESOURCEGROUP_BASE_NAME}-${LOCATION}
 ```
 
 ### 3. Create a Resource Group
+
 Create an Azure resource group with the specified name and location:
 
 ```bash
@@ -32,13 +36,26 @@ az group create -n $RESOURCEGROUP -l $LOCATION
 ```
 
 ### 4. Deploy Resources
+
 Deploy your resources using a Bicep template (e.g., `main.bicep`):
 
 ```bash
 az deployment group create -f ./main.bicep -g ${RESOURCEGROUP} -p administratorLoginPassword="changePass123!"
 ```
 
-### 5. Clean Up (Optional)
+### 5. Execute the Azure Data Factory Pipeline
+
+- Go to Azure Data Factory,
+- Launch Azure Data Factory studio
+- Go to Author/Pipeline -> IngestNYBabyNames_PL
+- Add Trigger-> Trigger Now
+- Go to monitor and wait to the pipeline success
+
+The pipeline consumes New York Helth data. This example works with baby names https://health.data.ny.gov/Health/Baby-Names-Beginning-2007/jxy9-yhdk/data_preview.
+The pipe consumes the api and save the data on Azure Data Lake, forlder bronce. The data is a json file with baby names from 2007.
+
+### 6. Clean Up
+
 When you're done, delete the resources and the resource group:
 
 ```bash

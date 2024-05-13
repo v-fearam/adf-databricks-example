@@ -10,8 +10,6 @@ param administratorLoginPassword string
 
 // --- Variables
 var uniqueName = uniqueString(resourceGroup().id)
-@description('Name of the Azure storage account that contains the input/output data.')
-var storageAccountName ='storage${uniqueName}'
 @description('Name of the blob container in the Azure Storage account.')
 var blobContainerName = 'blob-${uniqueName}'
 @description('Data Factory Name')
@@ -25,37 +23,16 @@ var serverName  = 'sqlserver-${uniqueName}'
 @description('The name of the SQL Database.')
 var  sqlDBName  = 'SampleDB'
 
-var dataFactoryLinkedServiceName = 'LS_ArmtemplateStorage'
-var dataFactoryDataSetInName = 'DS_ArmtemplateTestIn'
-var dataFactoryDataSetOutName = 'DS_ArmtemplateTestOut'
-var pipelineName = 'PL_ArmtemplateSampleCopy'
+var httpNYHealhDataLinkedServiceName = 'httpNYHealhData_LS'
+var dataLakeStoreLinkedServiceName = 'dataLakeStore_LS'
+var dataFactoryDataSetInName = 'babyNamesNY_DS'
+var dataFactoryDataSetOutName = 'storeBronceBabyName_DS'
+var pipelineName = 'IngestNYBabyNames_PL'
 var managedResourceGroupName = '${resourceGroup().name}-${workspaceName}'
+var bronceContainerName = 'bronce'
 
 
 // --- Resources
-resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
-  name: storageAccountName
-  location: location
-  sku: {
-    name: 'Standard_LRS'
-  }
-  kind: 'StorageV2'
-
-  properties: {
-    minimumTlsVersion: 'TLS1_2'
-    supportsHttpsTrafficOnly: true
-    allowBlobPublicAccess: false
-  }
-
-  resource defaultBlobService 'blobServices' = {
-    name: 'default'
-  }
-}
-
-resource blobContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
-  parent: storageAccount::defaultBlobService
-  name: blobContainerName
-}
 
 resource dataFactory 'Microsoft.DataFactory/factories@2018-06-01' = {
   name: dataFactoryName
@@ -65,13 +42,27 @@ resource dataFactory 'Microsoft.DataFactory/factories@2018-06-01' = {
   }
 }
 
-resource dataFactoryLinkedService 'Microsoft.DataFactory/factories/linkedservices@2018-06-01' = {
+resource httpNYHealhDataLinkedService 'Microsoft.DataFactory/factories/linkedservices@2018-06-01' = {
   parent: dataFactory
-  name: dataFactoryLinkedServiceName
+  name: httpNYHealhDataLinkedServiceName
   properties: {
-    type: 'AzureBlobStorage'
+    type: 'HttpServer'
     typeProperties: {
-      connectionString: 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value}'
+      authenticationType: 'Anonymous'
+      enableServerCertificateValidation: true
+      url: 'https://health.data.ny.gov'
+    }
+  }
+}
+
+resource dataLakeStoreLinkedService 'Microsoft.DataFactory/factories/linkedservices@2018-06-01' = {
+  parent: dataFactory
+  name: dataLakeStoreLinkedServiceName
+  properties: {
+    type: 'AzureBlobFS'
+    typeProperties: {
+        url: 'https://${dataLakeStore.name}.dfs.core.windows.net/'
+        accountKey: dataLakeStore.listKeys().keys[0].value
     }
   }
 }
@@ -81,17 +72,15 @@ resource dataFactoryDataSetIn 'Microsoft.DataFactory/factories/datasets@2018-06-
   name: dataFactoryDataSetInName
   properties: {
     linkedServiceName: {
-      referenceName: dataFactoryLinkedService.name
+      referenceName: httpNYHealhDataLinkedService.name
       type: 'LinkedServiceReference'
     }
-    type: 'Binary'
+    type: 'HttpFile'
     typeProperties: {
-      location: {
-        type: 'AzureBlobStorageLocation'
-        container: blobContainerName
-        folderPath: 'input'
-        fileName: 'emp.txt'
+      format: {
+        type: 'JsonFormat'
       }
+      relativeUrl: '/resource/jxy9-yhdk.json'
     }
   }
 }
@@ -101,15 +90,14 @@ resource dataFactoryDataSetOut 'Microsoft.DataFactory/factories/datasets@2018-06
   name: dataFactoryDataSetOutName
   properties: {
     linkedServiceName: {
-      referenceName: dataFactoryLinkedService.name
+      referenceName: dataLakeStoreLinkedService.name
       type: 'LinkedServiceReference'
     }
-    type: 'Binary'
+    type: 'Json'
     typeProperties: {
       location: {
-        type: 'AzureBlobStorageLocation'
-        container: blobContainerName
-        folderPath: 'output'
+        type: 'AzureBlobFSLocation'
+        fileSystem: 'bronce'
       }
     }
   }
@@ -121,20 +109,20 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
   properties: {
     activities: [
       {
-        name: 'MyCopyActivity'
+        name: 'IngestNYBabyNamesData'
         type: 'Copy'
         typeProperties: {
           source: {
-            type: 'BinarySource'
-            storeSettings: {
-              type: 'AzureBlobStorageReadSettings'
-              recursive: true
-            }
+            type: 'HttpSource'
+            httpRequestTimeout: '00:01:40'
           }
           sink: {
-            type: 'BinarySink'
+            type: 'JsonSink'
             storeSettings: {
-              type: 'AzureBlobStorageWriteSettings'
+              type: 'AzureBlobFSWriteSettings'
+            }
+            formatSettings: {
+              type: 'JsonWriteSettings'
             }
           }
           enableStaging: false
@@ -204,9 +192,6 @@ resource dataLakeStore 'Microsoft.Storage/storageAccounts@2023-04-01' = {
 resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-04-01' = {
   name: 'default'
   parent: dataLakeStore
-  dependsOn: [
-      storageAccount
-  ]
   properties: {
       containerDeleteRetentionPolicy: {
           enabled: true
@@ -226,9 +211,6 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-04-01'
 resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-04-01' = {
   name: 'default'
   parent: dataLakeStore
-  dependsOn: [
-      storageAccount
-  ]
   properties: {
       protocolSettings: {
           smb: {}
@@ -241,6 +223,11 @@ resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-04-01'
           days: 7
       }
   }
+}
+
+resource bronceContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
+  parent: blobService
+  name: bronceContainerName
 }
 
 resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
