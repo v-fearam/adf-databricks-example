@@ -51,8 +51,8 @@ az deployment group create -f ./main.bicep -g ${RESOURCEGROUP} -p administratorL
 - Add Trigger-> Trigger Now
 - Go to monitor and wait to the pipeline success
 
-The pipeline consumes New York Helth data. This example works with baby names https://health.data.ny.gov/Health/Baby-Names-Beginning-2007/jxy9-yhdk/data_preview.
-The pipe consumes the api and save the data on Azure Data Lake, forlder bronce. The data is a json file with baby names from 2007.
+The pipeline consumes New York Health data. This example works with baby names https://health.data.ny.gov/Health/Baby-Names-Beginning-2007/jxy9-yhdk/data_preview.
+The pipe consumes the api and saves the data on Azure Data Lake, folder **bronze**. The data is a json file with baby names from 2007.
 
 ### 6. Clean Up
 

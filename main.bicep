@@ -26,10 +26,10 @@ var  sqlDBName  = 'SampleDB'
 var httpNYHealhDataLinkedServiceName = 'httpNYHealhData_LS'
 var dataLakeStoreLinkedServiceName = 'dataLakeStore_LS'
 var dataFactoryDataSetInName = 'babyNamesNY_DS'
-var dataFactoryDataSetOutName = 'storeBronceBabyName_DS'
+var dataFactoryDataSetOutName = 'storeBronzeBabyName_DS'
 var pipelineName = 'IngestNYBabyNames_PL'
 var managedResourceGroupName = '${resourceGroup().name}-${workspaceName}'
-var bronceContainerName = 'bronce'
+var bronzeContainerName = 'bronze'
 
 
 // --- Resources
@@ -97,7 +97,7 @@ resource dataFactoryDataSetOut 'Microsoft.DataFactory/factories/datasets@2018-06
     typeProperties: {
       location: {
         type: 'AzureBlobFSLocation'
-        fileSystem: 'bronce'
+        fileSystem: 'bronze'
       }
     }
   }
@@ -225,9 +225,9 @@ resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-04-01'
   }
 }
 
-resource bronceContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
+resource bronzeContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
   parent: blobService
-  name: bronceContainerName
+  name: bronzeContainerName
 }
 
 resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
