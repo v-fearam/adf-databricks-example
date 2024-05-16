@@ -316,7 +316,7 @@ resource bronzeContainer 'Microsoft.Storage/storageAccounts/blobServices/contain
   name: bronzeContainerName
 }
 
-/*
+
 resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
   name: serverName
   location: location
@@ -335,7 +335,7 @@ resource sqlDB 'Microsoft.Sql/servers/databases@2022-05-01-preview' = {
     tier: 'Standard'
   }
 }
-*/
+
 
 output name string = dataFactoryPipeline.name
 output resourceId string = dataFactoryPipeline.id
