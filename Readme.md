@@ -85,7 +85,7 @@ To create a personal access token, do the following:
 
 Azure key vault contains the secret which will allow Azure Databricks to connect Azure Data Lake. The notebook will get the secrets from a Databricks secret scope.  
 
-1. Go to https://<databricks-instance>#secrets/createScope. Replace <databricks-instance> with the workspace URL of your Azure Databricks deployment. This URL is case sensitive (scope in createScope must be uppercase).
+1. Go to https://-databricks-instance-/**#secrets/createScope**. Replace -databricks-instance- with the workspace URL of your Azure Databricks deployment. This URL is case sensitive (scope in createScope must be uppercase).
 
 2. Enter the name of the secret scope. Our notebook expect **dataLakeScope**
 
