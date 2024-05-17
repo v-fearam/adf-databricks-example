@@ -56,8 +56,6 @@ The bicep deploys:
   2. A Databricks Notebook execution
 - A SQL Database
 
-Note: So far, the deployment of the link service from Azure Data Factory (ADF) to Databricks is not correct. Although it has been deployed, it is not functioning as expected, and I’m unable to determine how to fix it. A new connection based on Managed Service Identity (MSI) needs to be created and associated with the Databricks activity. I will continue moving forward and revisit this issue later. The fix requires manual intervention
-
 ### 5. Upload databricks notebook
 
 There is a notebook on the folder `./notebooks`. It is possible to create it manually using azure portal adding the same content or upload using databriks cli.  
@@ -83,9 +81,25 @@ To create a personal access token, do the following:
     databricks sync ./notebooks/ /Users/${USERNAME}/myLib
 ```
 
-Then the databricks activity need to be selected the notebook that was already created.
+### 6. [Create an Azure Key Vault-backed secret scope](https://learn.microsoft.com/azure/databricks/security/secrets/secret-scopes#create-an-azure-key-vault-backed-secret-scope)  
 
-### 6. Execute the Azure Data Factory Pipeline
+Azure key vault contains the secret which will allow Azure Databricks to connect Azure Data Lake. The notebook will get the secrets from a Databricks secret scope.  
+
+1. Go to https://<databricks-instance>#secrets/createScope. Replace <databricks-instance> with the workspace URL of your Azure Databricks deployment. This URL is case sensitive (scope in createScope must be uppercase).
+
+2. Enter the name of the secret scope. Our notebook expect **dataLakeScope**
+
+3. Complete dns name and resource id
+
+```bash
+  # Get the values from here
+  export DATABRICKS_KEY_VAULT_DNS_NAME=$(az deployment group show -g ${RESOURCEGROUP} --name main --query properties.outputs.databricksKeyVaultUrl.value --output tsv)
+  export DATABRICKS_KEY_VAULT_RESOURCE_ID=$(az deployment group show -g ${RESOURCEGROUP} --name main --query properties.outputs.databricksKeyVaultResourceId.value --output tsv)
+  echo $DATABRICKS_KEY_VAULT_DNS_NAME
+  echo $DATABRICKS_KEY_VAULT_RESOURCE_ID
+```
+
+### 7. Execute the Azure Data Factory Pipeline
 
 - Go to Azure Data Factory,
 - Launch Azure Data Factory studio
@@ -98,13 +112,15 @@ The pipe consumes the api and saves the data on Azure Data Lake, folder **bronze
 
 Then the databricks notebook is executed, but so far is a simple notebook. The execution could be check, but it is doing nothing.
 
-### 7. Clean Up
+### 8. Clean Up
 
 When you're done, delete the resources and the resource group:
 
 ```bash
-DB_MANAGED_RESOURCEGROUP=$(az deployment group show --resource-group ${RESOURCEGROUP} --name main --query properties.outputs.databriksManagedResourceGroup.value -o tsv)
+export DB_MANAGED_RESOURCEGROUP=$(az deployment group show --resource-group ${RESOURCEGROUP} --name main --query properties.outputs.databriksManagedResourceGroup.value -o tsv)
+export DATABRICKS_KEY_VAULT_NAME=$(az deployment group show -g ${RESOURCEGROUP} --name main --query properties.outputs.databricksKeyVaultName.value --output tsv)
 
 az group delete -n $RESOURCEGROUP -y
+az keyvault purge --name $DATABRICKS_KEY_VAULT_NAME
 az group delete -n $DB_MANAGED_RESOURCEGROUP -y
 ```

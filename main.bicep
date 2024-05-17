@@ -11,6 +11,9 @@ param administratorLoginPassword string
 @description('The username that is deploying, the databricks workpace of the user will have the notebook')
 param username string
 
+@description('Specifies the Azure Active Directory tenant ID that should be used for authenticating requests to the key vault. Get it by using Get-AzSubscription cmdlet.')
+param tenantId string = subscription().tenantId
+
 // --- Variables
 var uniqueName = uniqueString(resourceGroup().id)
 @description('Name of the blob container in the Azure Storage account.')
@@ -24,7 +27,9 @@ var datalakeStoreName = 'datalake${uniqueName}'
 @description('The name of the SQL logical server.')
 var serverName  = 'sqlserver-${uniqueName}'
 @description('The name of the SQL Database.')
-var  sqlDBName  = 'SampleDB'
+var  sqlDBName  = 'SampleDB-${uniqueName}'
+@description('The name of the Key Vault.')
+var  keyVaultName  = 'keyVault${uniqueName}'
 
 var httpNYHealhDataLinkedServiceName = 'httpNYHealhData_LS'
 var dataLakeStoreLinkedServiceName = 'dataLakeStore_LS'
@@ -34,6 +39,8 @@ var dataFactoryDataSetOutName = 'storeBronzeBabyName_DS'
 var pipelineName = 'IngestNYBabyNames_PL'
 var managedResourceGroupName = '${resourceGroup().name}-${workspaceName}'
 var bronzeContainerName = 'bronze'
+var silverContainerName = 'silver'
+var goldContainerName = 'gold'
 
 var contributorRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c') // Role Definition ID for Contributor
 var storageBlobDataContributorRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') //Storage Blob Data Contributor
@@ -124,12 +131,16 @@ resource dataFactoryDataSetIn 'Microsoft.DataFactory/factories/datasets@2018-06-
       referenceName: httpNYHealhDataLinkedService.name
       type: 'LinkedServiceReference'
     }
-    type: 'HttpFile'
+    type: 'DelimitedText'
     typeProperties: {
-      format: {
-        type: 'JsonFormat'
+      location: {
+        type: 'HttpServerLocation'
+        relativeUrl: '/resource/jxy9-yhdk.csv'
       }
-      relativeUrl: '/resource/jxy9-yhdk.json'
+      columnDelimiter: ','
+      escapeChar: '\\'
+      firstRowAsHeader: true
+      quoteChar: '\u{0022}'
     }
   }
 }
@@ -142,12 +153,17 @@ resource dataFactoryDataSetOut 'Microsoft.DataFactory/factories/datasets@2018-06
       referenceName: dataLakeStoreLinkedService.name
       type: 'LinkedServiceReference'
     }
-    type: 'Json'
+    type: 'DelimitedText'
     typeProperties: {
       location: {
         type: 'AzureBlobFSLocation'
+        fileName: 'nybabynames.csv'
         fileSystem: 'bronze'
       }
+      columnDelimiter: ','
+      escapeChar: '\\'
+      firstRowAsHeader: true
+      quoteChar: '\u{0022}'
     }
   }
 }
@@ -162,16 +178,24 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
         type: 'Copy'
         typeProperties: {
           source: {
-            type: 'HttpSource'
-            httpRequestTimeout: '00:01:40'
+            type: 'DelimitedTextSource'
+            storeSettings: {
+              type: 'HttpReadSettings'
+              requestMethod: 'GET'
+            }
+            formatSettings:{
+              type:'DelimitedTextReadSettings'
+            }
           } 
           sink: {
-            type: 'JsonSink'
+            type: 'DelimitedTextSink'
             storeSettings: {
               type: 'AzureBlobFSWriteSettings'
             }
             formatSettings: {
-              type: 'JsonWriteSettings'
+              type: 'DelimitedTextWriteSettings'
+              quoteAllText: true
+              fileExtension: '.csv'
             }
           }
           enableStaging: false
@@ -202,6 +226,9 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
         ]
         typeProperties:{
           notebookPath:'/Users/${username}/myLib/mynotebook'
+          baseParameters: {
+            input: '@pipeline().runId'
+          }
         }
         linkedServiceName:{
           referenceName: databriksLinkedService.name
@@ -244,7 +271,7 @@ resource adfToDataBricksContributorRoleAssignment 'Microsoft.Authorization/roleA
 
 resource dataLakeStore 'Microsoft.Storage/storageAccounts@2023-04-01' = {
   name: datalakeStoreName
-  location: 'eastus'
+  location: location
   sku: {
       name: 'Standard_LRS'
   }
@@ -316,8 +343,56 @@ resource bronzeContainer 'Microsoft.Storage/storageAccounts/blobServices/contain
   name: bronzeContainerName
 }
 
+resource silverContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
+  parent: blobService
+  name: silverContainerName
+}
 
-resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
+resource goldContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
+  parent: blobService
+  name: goldContainerName
+}
+
+resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
+  name: keyVaultName
+  location: location
+  properties: {
+    enabledForDeployment: false
+    enabledForDiskEncryption: false
+    enabledForTemplateDeployment: false
+    tenantId: tenantId
+    enableSoftDelete: true
+    softDeleteRetentionInDays: 90
+    accessPolicies: [
+     ]
+    sku: {
+      name: 'standard'
+      family: 'A'
+    }
+    networkAcls: {
+      defaultAction: 'Allow'
+      bypass: 'AzureServices'
+    }
+  }
+}
+
+resource accountNameSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: kv
+  name: 'accountName'
+  properties: {
+    value: dataLakeStore.name
+  }
+}
+
+resource accountKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: kv
+  name: 'accountKey'
+  properties: {
+    value: dataLakeStore.listKeys().keys[0].value
+  }
+}
+/*
+resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   name: serverName
   location: location
   properties: {
@@ -326,19 +401,28 @@ resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
   }
 }
 
-resource sqlDB 'Microsoft.Sql/servers/databases@2022-05-01-preview' = {
+resource sqlDB 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
   parent: sqlServer
   name: sqlDBName
   location: location
   sku: {
     name: 'Standard'
     tier: 'Standard'
+    capacity: 10
+  }
+  properties:{
+    zoneRedundant: false
+    readScale: 'Disabled'
+    requestedBackupStorageRedundancy:'Local'
   }
 }
-
+*/
 
 output name string = dataFactoryPipeline.name
 output resourceId string = dataFactoryPipeline.id
 output databriksManagedResourceGroup string = managedResourceGroupName
 output location string = location
 output databricksWorkpaceUrl string = 'https://${databricksWorkpace.properties.workspaceUrl}'
+output databricksKeyVaultName string = keyVaultName
+output databricksKeyVaultUrl string = kv.properties.vaultUri
+output databricksKeyVaultResourceId string = kv.id
