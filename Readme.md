@@ -89,7 +89,9 @@ Azure key vault contains the secret which will allow Azure Databricks to connect
 
 2. Enter the name of the secret scope. Our notebook expect **dataLakeScope**
 
-3. Complete dns name and resource id
+3. Set Managed Principal to 'All workpace users'
+
+4. Complete dns name and resource id
 
 ```bash
   # Get the values from here

@@ -157,7 +157,7 @@ resource dataFactoryDataSetOut 'Microsoft.DataFactory/factories/datasets@2018-06
     typeProperties: {
       location: {
         type: 'AzureBlobFSLocation'
-        fileName: 'nybabynames.csv'
+        fileName: '@concat(\'nybabynames-\',formatDatetime(utcnow(),\'dd-MM-yyy\'),\'.csv\')'
         fileSystem: 'bronze'
       }
       columnDelimiter: ','
@@ -227,7 +227,9 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
         typeProperties:{
           notebookPath:'/Users/${username}/myLib/mynotebook'
           baseParameters: {
-            input: '@pipeline().runId'
+            _pipeline_run_id: '@pipeline().RunId'
+            _filename: '@concat(\'nybabynames-\',formatDatetime(utcnow(),\'dd-MM-yyy\'),\'.csv\')'
+
           }
         }
         linkedServiceName:{
