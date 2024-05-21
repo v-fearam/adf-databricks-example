@@ -119,10 +119,8 @@ Then the databricks notebook is executed, but so far is a simple notebook. The e
 When you're done, delete the resources and the resource group:
 
 ```bash
-export DB_MANAGED_RESOURCEGROUP=$(az deployment group show --resource-group ${RESOURCEGROUP} --name main --query properties.outputs.databriksManagedResourceGroup.value -o tsv)
 export DATABRICKS_KEY_VAULT_NAME=$(az deployment group show -g ${RESOURCEGROUP} --name main --query properties.outputs.databricksKeyVaultName.value --output tsv)
 
 az group delete -n $RESOURCEGROUP -y
 az keyvault purge --name $DATABRICKS_KEY_VAULT_NAME
-az group delete -n $DB_MANAGED_RESOURCEGROUP -y
 ```

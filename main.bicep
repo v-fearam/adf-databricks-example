@@ -41,6 +41,7 @@ var managedResourceGroupName = '${resourceGroup().name}-${workspaceName}'
 var bronzeContainerName = 'bronze'
 var silverContainerName = 'silver'
 var goldContainerName = 'gold'
+var landingContainerName = 'landing'
 
 var contributorRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c') // Role Definition ID for Contributor
 var storageBlobDataContributorRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') //Storage Blob Data Contributor
@@ -158,7 +159,7 @@ resource dataFactoryDataSetOut 'Microsoft.DataFactory/factories/datasets@2018-06
       location: {
         type: 'AzureBlobFSLocation'
         fileName: '@concat(\'nybabynames-\',formatDatetime(utcnow(),\'dd-MM-yyy\'),\'.csv\')'
-        fileSystem: 'bronze'
+        fileSystem: landingContainerName
       }
       columnDelimiter: ','
       escapeChar: '\\'
@@ -214,7 +215,7 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
         ]
       }
       {
-        name: 'ProcessData'
+        name: 'LandingToBronze'
         type: 'DatabricksNotebook'
         dependsOn:[
           {
@@ -225,11 +226,34 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           }
         ]
         typeProperties:{
-          notebookPath:'/Users/${username}/myLib/mynotebook'
+          notebookPath:'/Users/${username}/myLib/landingToBronze'
           baseParameters: {
             _pipeline_run_id: '@pipeline().RunId'
             _filename: '@concat(\'nybabynames-\',formatDatetime(utcnow(),\'dd-MM-yyy\'),\'.csv\')'
-
+            _processing_date: '@formatDatetime(utcnow(),\'dd-MM-yyy HH:mm:ss\')'
+          }
+        }
+        linkedServiceName:{
+          referenceName: databriksLinkedService.name
+          type: 'LinkedServiceReference'
+        }
+      }
+      {
+        name: 'BronzeToSilver'
+        type: 'DatabricksNotebook'
+        dependsOn:[
+          {
+            activity: 'LandingToBronze'
+            dependencyConditions: [
+              'Completed'
+            ]
+          }
+        ]
+        typeProperties:{
+          notebookPath:'/Users/${username}/myLib/bronzeToSilver'
+          baseParameters: {
+            _pipeline_run_id: '@pipeline().RunId'
+            _processing_date: '@formatDatetime(utcnow(),\'dd-MM-yyy\')'
           }
         }
         linkedServiceName:{
@@ -338,6 +362,11 @@ resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-04-01'
           days: 7
       }
   }
+}
+
+resource landingContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
+  parent: blobService
+  name: landingContainerName
 }
 
 resource bronzeContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-01-01' = {
