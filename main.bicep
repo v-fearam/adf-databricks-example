@@ -259,6 +259,27 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           type: 'LinkedServiceReference'
         }
       }
+      {
+        name: 'SilvrToGold'
+        type: 'DatabricksNotebook'
+        dependsOn:[
+          {
+            activity: 'BronzeToSilver'
+            dependencyConditions: [
+              'Completed'
+            ]
+          }
+        ]
+        typeProperties:{
+          notebookPath:'/Users/${username}/myLib/silverToGold'
+          baseParameters: {
+          }
+        }
+        linkedServiceName:{
+          referenceName: databriksLinkedService.name
+          type: 'LinkedServiceReference'
+        }
+      }
     ]
   }
 }
