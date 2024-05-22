@@ -16,8 +16,6 @@ param tenantId string = subscription().tenantId
 
 // --- Variables
 var uniqueName = uniqueString(resourceGroup().id)
-@description('Name of the blob container in the Azure Storage account.')
-var blobContainerName = 'blob-${uniqueName}'
 @description('Data Factory Name')
 var dataFactoryName = 'datafactory-${uniqueName}'
 @description('The name of the Azure Databricks workspace to create.')
