@@ -260,7 +260,7 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
         }
       }
       {
-        name: 'SilvrToGold'
+        name: 'SilverToGold'
         type: 'DatabricksNotebook'
         dependsOn:[
           {
@@ -273,6 +273,8 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
         typeProperties:{
           notebookPath:'/Users/${username}/myLib/silverToGold'
           baseParameters: {
+            _pipeline_run_id: '@pipeline().RunId'
+            _processing_date: '@formatDatetime(utcnow(),\'dd-MM-yyy\')'
           }
         }
         linkedServiceName:{
