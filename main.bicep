@@ -443,7 +443,7 @@ resource accountKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
     value: dataLakeStore.listKeys().keys[0].value
   }
 }
-/*
+
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   name: serverName
   location: location
@@ -468,7 +468,6 @@ resource sqlDB 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
     requestedBackupStorageRedundancy:'Local'
   }
 }
-*/
 
 output name string = dataFactoryPipeline.name
 output resourceId string = dataFactoryPipeline.id
