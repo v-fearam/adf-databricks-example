@@ -310,7 +310,7 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           {
             activity: 'IngestNYBabyNamesData'
             dependencyConditions: [
-              'Completed'
+              'Succeeded'
             ]
           }
         ]
@@ -334,7 +334,7 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           {
             activity: 'LandingToBronze'
             dependencyConditions: [
-              'Completed'
+              'Succeeded'
             ]
           }
         ]
@@ -357,7 +357,7 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           {
             activity: 'BronzeToSilver'
             dependencyConditions: [
-              'Completed'
+              'Succeeded'
             ]
           }
         ]
@@ -374,13 +374,202 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
         }
       }
       {
-        name: 'CopyFactBabyNames'
+        name: 'CopyDimNames'
         type: 'Copy'
         dependsOn: [
           {
             activity: 'SilverToGold'
             dependencyConditions: [
-              'Completed'
+              'Succeeded'
+            ]
+          }
+        ]
+        typeProperties: {
+          source: {
+            type: 'ParquetSource'
+            storeSettings: {
+              type: 'AzureBlobFSReadSettings'
+              recursive: true
+              modifiedDatetimeStart: {
+                value: '@adddays(utcnow(),-1)'
+                type: 'Expression'
+              }
+              wildcardFolderPath: 'dim_names'
+              wildcardFileName: '*.parquet'
+              enablePartitionDiscovery: false
+            }
+            formatSettings: {
+              type: 'ParquetReadSettings'
+            }
+          }
+          sink: {
+            type: 'AzureSqlSink'
+            sqlWriterStoredProcedureName: '[dbo].[spOverwriteDimNames]'
+            sqlWriterTableType: 'DimNamesType'
+            storedProcedureTableTypeParameterName: 'DimNames'
+            disableMetricsCollection: false
+          }
+          enableStaging: false
+          translator: {
+            type: 'TabularTranslator'
+            typeConversion: true
+            typeConversionSettings: {
+              allowDataTruncation: true
+              treatBooleanAsNumber: false
+            }
+          }
+        }
+        inputs: [
+          {
+            referenceName: parquetDataSet.name
+            type: 'DatasetReference'
+          }
+        ]
+        outputs: [
+          {
+            referenceName: azureSqlBabyNamesDataSet.name
+            type: 'DatasetReference'
+          }
+        ]
+      }
+      {
+        name: 'CopyDimLocations'
+        type: 'Copy'
+        dependsOn: [
+          {
+            activity: 'SilverToGold'
+            dependencyConditions: [
+              'Succeeded'
+            ]
+          }
+        ]
+        typeProperties: {
+          source: {
+            type: 'ParquetSource'
+            storeSettings: {
+              type: 'AzureBlobFSReadSettings'
+              recursive: true
+              modifiedDatetimeStart: {
+                value: '@adddays(utcnow(),-1)'
+                type: 'Expression'
+              }
+              wildcardFolderPath: 'dim_locations'
+              wildcardFileName: '*.parquet'
+              enablePartitionDiscovery: false
+            }
+            formatSettings: {
+              type: 'ParquetReadSettings'
+            }
+          }
+          sink: {
+            type: 'AzureSqlSink'
+            sqlWriterStoredProcedureName: '[dbo].[spOverwriteDimLocations]'
+            sqlWriterTableType: 'DimLocationsType'
+            storedProcedureTableTypeParameterName: 'DimLocations'
+            disableMetricsCollection: false
+          }
+          enableStaging: false
+          translator: {
+            type: 'TabularTranslator'
+            typeConversion: true
+            typeConversionSettings: {
+              allowDataTruncation: true
+              treatBooleanAsNumber: false
+            }
+          }
+        }
+        inputs: [
+          {
+            referenceName: parquetDataSet.name
+            type: 'DatasetReference'
+          }
+        ]
+        outputs: [
+          {
+            referenceName: azureSqlBabyNamesDataSet.name
+            type: 'DatasetReference'
+          }
+        ]
+      }
+      {
+        name: 'CopyDimYears'
+        type: 'Copy'
+        dependsOn: [
+          {
+            activity: 'SilverToGold'
+            dependencyConditions: [
+              'Succeeded'
+            ]
+          }
+        ]
+        typeProperties: {
+          source: {
+            type: 'ParquetSource'
+            storeSettings: {
+              type: 'AzureBlobFSReadSettings'
+              recursive: true
+              modifiedDatetimeStart: {
+                value: '@adddays(utcnow(),-1)'
+                type: 'Expression'
+              }
+              wildcardFolderPath: 'dim_years'
+              wildcardFileName: '*.parquet'
+              enablePartitionDiscovery: false
+            }
+            formatSettings: {
+              type: 'ParquetReadSettings'
+            }
+          }
+          sink: {
+            type: 'AzureSqlSink'
+            sqlWriterStoredProcedureName: '[dbo].[spOverwriteDimYears]'
+            sqlWriterTableType: 'DimYearsType'
+            storedProcedureTableTypeParameterName: 'DimYears'
+            disableMetricsCollection: false
+          }
+          enableStaging: false
+          translator: {
+            type: 'TabularTranslator'
+            typeConversion: true
+            typeConversionSettings: {
+              allowDataTruncation: true
+              treatBooleanAsNumber: false
+            }
+          }
+        }
+        inputs: [
+          {
+            referenceName: parquetDataSet.name
+            type: 'DatasetReference'
+          }
+        ]
+        outputs: [
+          {
+            referenceName: azureSqlBabyNamesDataSet.name
+            type: 'DatasetReference'
+          }
+        ]
+      }
+      {
+        name: 'CopyFactBabyNames'
+        type: 'Copy'
+        dependsOn: [
+          {
+            activity: 'CopyDimLocations'
+            dependencyConditions: [
+              'Succeeded'
+            ]
+          }
+          {
+            activity: 'CopyDimNames'
+            dependencyConditions: [
+              'Succeeded'
+            ]
+          }
+          {
+            activity: 'CopyDimYears'
+            dependencyConditions: [
+              'Succeeded'
             ]
           }
         ]
