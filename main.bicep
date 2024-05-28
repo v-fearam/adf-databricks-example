@@ -23,17 +23,23 @@ var workspaceName = 'databricks-workpace-${uniqueName}'
 @description('The name of the Azure Data Lake Store to create.')
 var datalakeStoreName = 'datalake${uniqueName}'
 @description('The name of the SQL logical server.')
-var serverName  = 'sqlserver-${uniqueName}'
+var serverName = 'sqlserver-${uniqueName}'
 @description('The name of the SQL Database.')
-var  sqlDBName  = 'SampleDB-${uniqueName}'
-@description('The name of the Key Vault.')
-var  keyVaultName  = 'keyVault${uniqueName}'
+var sqlDBName = 'SampleDB-${uniqueName}'
+@description('The databricks Key Vault name.')
+var keyVaultName = 'dbricksKV${uniqueName}'
+@description('The adf Key Vault name.')
+var adfKeyVaultName = 'adfkeyVault${uniqueName}'
 
 var httpNYHealhDataLinkedServiceName = 'httpNYHealhData_LS'
 var dataLakeStoreLinkedServiceName = 'dataLakeStore_LS'
+var sqlServerLinkedServiceName = 'sqlServer_LS'
+var keyVaultLinkedServiceName = 'keyVault_LS'
 var databricksLinkedServiceName = 'databricks_LS'
 var dataFactoryDataSetInName = 'babyNamesNY_DS'
-var dataFactoryDataSetOutName = 'storeBronzeBabyName_DS'
+var csvDataSetName = 'storeBronzeBabyName_DS'
+var parquetDataSetName = 'Parquet_DS'
+var azureSqlBabyNamesDataSetName = 'AzureSqlBabyNames_DS'
 var pipelineName = 'IngestNYBabyNames_PL'
 var managedResourceGroupName = '${resourceGroup().name}-${workspaceName}'
 var bronzeContainerName = 'bronze'
@@ -41,8 +47,18 @@ var silverContainerName = 'silver'
 var goldContainerName = 'gold'
 var landingContainerName = 'landing'
 
-var contributorRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c') // Role Definition ID for Contributor
-var storageBlobDataContributorRole = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe') //Storage Blob Data Contributor
+var contributorRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  'b24988ac-6180-42a0-ab88-20f7382dd24c'
+) // Role Definition ID for Contributor
+var storageBlobDataContributorRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
+) //Storage Blob Data Contributor
+var keyVaultSecretsUserRole = subscriptionResourceId(
+  'Microsoft.Authorization/roleDefinitions',
+  '4633458b-17de-408a-b874-0445c86b69e6'
+) //Key Vault Secrets User
 // --- Resources
 
 resource dataFactoryUserIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2021-09-30-preview' = {
@@ -91,10 +107,10 @@ resource dataLakeStoreLinkedService 'Microsoft.DataFactory/factories/linkedservi
   properties: {
     type: 'AzureBlobFS'
     typeProperties: {
-        url: 'https://${dataLakeStore.name}.dfs.core.windows.net/'
-        credential: {
-          referenceName: credential.name
-          type: 'CredentialReference'
+      url: 'https://${dataLakeStore.name}.dfs.core.windows.net/'
+      credential: {
+        referenceName: credential.name
+        type: 'CredentialReference'
       }
     }
   }
@@ -106,18 +122,58 @@ resource databriksLinkedService 'Microsoft.DataFactory/factories/linkedservices@
   properties: {
     type: 'AzureDatabricks'
     typeProperties: {
-        domain: 'https://${databricksWorkpace.properties.workspaceUrl}'
-        workspaceResourceId: databricksWorkpace.id
-        credential: {
-          referenceName: credential.name
-          type: 'CredentialReference'
+      domain: 'https://${databricksWorkpace.properties.workspaceUrl}'
+      workspaceResourceId: databricksWorkpace.id
+      credential: {
+        referenceName: credential.name
+        type: 'CredentialReference'
+      }
+      authentication: 'MSI'
+      newClusterNodeType: 'Standard_DS3_v2'
+      newClusterNumOfWorker: 1
+      newClusterVersion: '14.3.x-scala2.12'
+      newClusterInitScripts: []
+      clusterOption: 'Fixed'
+    }
+  }
+}
+
+resource sqlServerLinkedService 'Microsoft.DataFactory/factories/linkedservices@2018-06-01' = {
+  parent: dataFactory
+  name: sqlServerLinkedServiceName
+  properties: {
+    type: 'AzureSqlDatabase'
+    typeProperties: {
+      server: sqlServer.properties.fullyQualifiedDomainName
+      database: sqlDB.name
+      encrypt: 'mandatory'
+      trustServerCertificate: false
+      hostNameInCertificate: ''
+      authenticationType: 'SQL'
+      userName: 'myadminname'
+      password: {
+        type: 'AzureKeyVaultSecret'
+        store: {
+          referenceName: 'keyVault_LS'
+          type: 'LinkedServiceReference'
         }
-        authentication: 'MSI'
-        newClusterNodeType: 'Standard_DS3_v2'
-        newClusterNumOfWorker: 1
-        newClusterVersion: '14.3.x-scala2.12'
-        newClusterInitScripts: []
-        clusterOption: 'Fixed'
+        secretName: 'dbPassword'
+      }
+    }
+  }
+}
+
+resource keyVaultLinkedService 'Microsoft.DataFactory/factories/linkedservices@2018-06-01' = {
+  parent: dataFactory
+  name: keyVaultLinkedServiceName
+  properties: {
+    type: 'AzureKeyVault'
+    typeProperties: {
+      baseUrl: adfKv.properties.vaultUri
+      credential: {
+        referenceName: credential.name
+        type: 'CredentialReference'
+      }
     }
   }
 }
@@ -144,9 +200,9 @@ resource dataFactoryDataSetIn 'Microsoft.DataFactory/factories/datasets@2018-06-
   }
 }
 
-resource dataFactoryDataSetOut 'Microsoft.DataFactory/factories/datasets@2018-06-01' = {
+resource csvDataSet 'Microsoft.DataFactory/factories/datasets@2018-06-01' = {
   parent: dataFactory
-  name: dataFactoryDataSetOutName
+  name: csvDataSetName
   properties: {
     linkedServiceName: {
       referenceName: dataLakeStoreLinkedService.name
@@ -167,6 +223,41 @@ resource dataFactoryDataSetOut 'Microsoft.DataFactory/factories/datasets@2018-06
   }
 }
 
+resource parquetDataSet 'Microsoft.DataFactory/factories/datasets@2018-06-01' = {
+  parent: dataFactory
+  name: parquetDataSetName
+  properties: {
+    linkedServiceName: {
+      referenceName: dataLakeStoreLinkedService.name
+      type: 'LinkedServiceReference'
+    }
+    annotations: []
+    type: 'Parquet'
+    typeProperties: {
+      location: {
+        type: 'AzureBlobFSLocation'
+        fileSystem: 'gold'
+      }
+      compressionCodec: 'snappy'
+    }
+    schema: []
+  }
+}
+
+resource azureSqlBabyNamesDataSet 'Microsoft.DataFactory/factories/datasets@2018-06-01' = {
+  parent: dataFactory
+  name: azureSqlBabyNamesDataSetName
+  properties: {
+    linkedServiceName: {
+      referenceName: sqlServerLinkedService.name
+      type: 'LinkedServiceReference'
+    }
+    annotations: []
+    type: 'AzureSqlTable'
+    schema: []
+  }
+}
+
 resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-01' = {
   parent: dataFactory
   name: pipelineName
@@ -182,10 +273,10 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
               type: 'HttpReadSettings'
               requestMethod: 'GET'
             }
-            formatSettings:{
-              type:'DelimitedTextReadSettings'
+            formatSettings: {
+              type: 'DelimitedTextReadSettings'
             }
-          } 
+          }
           sink: {
             type: 'DelimitedTextSink'
             storeSettings: {
@@ -207,7 +298,7 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
         ]
         outputs: [
           {
-            referenceName: dataFactoryDataSetOut.name
+            referenceName: csvDataSet.name
             type: 'DatasetReference'
           }
         ]
@@ -215,7 +306,7 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
       {
         name: 'LandingToBronze'
         type: 'DatabricksNotebook'
-        dependsOn:[
+        dependsOn: [
           {
             activity: 'IngestNYBabyNamesData'
             dependencyConditions: [
@@ -223,15 +314,15 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
             ]
           }
         ]
-        typeProperties:{
-          notebookPath:'/Users/${username}/myLib/landingToBronze'
+        typeProperties: {
+          notebookPath: '/Users/${username}/myLib/landingToBronze'
           baseParameters: {
             _pipeline_run_id: '@pipeline().RunId'
             _filename: '@concat(\'nybabynames-\',formatDatetime(utcnow(),\'dd-MM-yyy\'),\'.csv\')'
             _processing_date: '@formatDatetime(utcnow(),\'dd-MM-yyy HH:mm:ss\')'
           }
         }
-        linkedServiceName:{
+        linkedServiceName: {
           referenceName: databriksLinkedService.name
           type: 'LinkedServiceReference'
         }
@@ -239,7 +330,7 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
       {
         name: 'BronzeToSilver'
         type: 'DatabricksNotebook'
-        dependsOn:[
+        dependsOn: [
           {
             activity: 'LandingToBronze'
             dependencyConditions: [
@@ -247,14 +338,14 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
             ]
           }
         ]
-        typeProperties:{
-          notebookPath:'/Users/${username}/myLib/bronzeToSilver'
+        typeProperties: {
+          notebookPath: '/Users/${username}/myLib/bronzeToSilver'
           baseParameters: {
             _pipeline_run_id: '@pipeline().RunId'
             _processing_date: '@formatDatetime(utcnow(),\'dd-MM-yyy\')'
           }
         }
-        linkedServiceName:{
+        linkedServiceName: {
           referenceName: databriksLinkedService.name
           type: 'LinkedServiceReference'
         }
@@ -262,7 +353,7 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
       {
         name: 'SilverToGold'
         type: 'DatabricksNotebook'
-        dependsOn:[
+        dependsOn: [
           {
             activity: 'BronzeToSilver'
             dependencyConditions: [
@@ -270,17 +361,76 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
             ]
           }
         ]
-        typeProperties:{
-          notebookPath:'/Users/${username}/myLib/silverToGold'
+        typeProperties: {
+          notebookPath: '/Users/${username}/myLib/silverToGold'
           baseParameters: {
             _pipeline_run_id: '@pipeline().RunId'
             _processing_date: '@formatDatetime(utcnow(),\'dd-MM-yyy\')'
           }
         }
-        linkedServiceName:{
+        linkedServiceName: {
           referenceName: databriksLinkedService.name
           type: 'LinkedServiceReference'
         }
+      }
+      {
+        name: 'CopyFactBabyNames'
+        type: 'Copy'
+        dependsOn: [
+          {
+            activity: 'SilverToGold'
+            dependencyConditions: [
+              'Completed'
+            ]
+          }
+        ]
+        typeProperties: {
+          source: {
+            type: 'ParquetSource'
+            storeSettings: {
+              type: 'AzureBlobFSReadSettings'
+              recursive: true
+              modifiedDatetimeStart: {
+                value: '@adddays(utcnow(),-1)'
+                type: 'Expression'
+              }
+              wildcardFolderPath: 'fact_babynames'
+              wildcardFileName: '*.parquet'
+              enablePartitionDiscovery: false
+            }
+            formatSettings: {
+              type: 'ParquetReadSettings'
+            }
+          }
+          sink: {
+            type: 'AzureSqlSink'
+            sqlWriterStoredProcedureName: '[dbo].[spOverwriteFactBabyNames]'
+            sqlWriterTableType: 'FactBabyNamesType'
+            storedProcedureTableTypeParameterName: 'FactBabyNames'
+            disableMetricsCollection: false
+          }
+          enableStaging: false
+          translator: {
+            type: 'TabularTranslator'
+            typeConversion: true
+            typeConversionSettings: {
+              allowDataTruncation: true
+              treatBooleanAsNumber: false
+            }
+          }
+        }
+        inputs: [
+          {
+            referenceName: parquetDataSet.name
+            type: 'DatasetReference'
+          }
+        ]
+        outputs: [
+          {
+            referenceName: azureSqlBabyNamesDataSet.name
+            type: 'DatasetReference'
+          }
+        ]
       }
     ]
   }
@@ -298,7 +448,7 @@ resource databricksWorkpace 'Microsoft.Databricks/workspaces@2018-04-01' = {
     name: 'premium'
   }
   properties: {
-    managedResourceGroupId:   managedResourceGroup.id
+    managedResourceGroupId: managedResourceGroup.id
     parameters: {
       enableNoPublicIp: {
         value: false
@@ -320,23 +470,23 @@ resource dataLakeStore 'Microsoft.Storage/storageAccounts@2023-04-01' = {
   name: datalakeStoreName
   location: location
   sku: {
-      name: 'Standard_LRS'
+    name: 'Standard_LRS'
   }
   kind: 'StorageV2'
   properties: {
-      publicNetworkAccess: 'Enabled'
-      allowBlobPublicAccess: false
-      allowSharedKeyAccess: true
-      largeFileSharesState: 'Enabled'
-      isHnsEnabled: true
-      networkAcls: {
-          bypass: 'AzureServices'
-          virtualNetworkRules: []
-          ipRules: []
-          defaultAction: 'Allow'
-      }
-      supportsHttpsTrafficOnly: true
-      accessTier: 'Hot'
+    publicNetworkAccess: 'Enabled'
+    allowBlobPublicAccess: false
+    allowSharedKeyAccess: true
+    largeFileSharesState: 'Enabled'
+    isHnsEnabled: true
+    networkAcls: {
+      bypass: 'AzureServices'
+      virtualNetworkRules: []
+      ipRules: []
+      defaultAction: 'Allow'
+    }
+    supportsHttpsTrafficOnly: true
+    accessTier: 'Hot'
   }
 }
 
@@ -353,18 +503,18 @@ resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-04-01'
   name: 'default'
   parent: dataLakeStore
   properties: {
-      containerDeleteRetentionPolicy: {
-          enabled: true
-          days: 7
-      }
-      cors: {
-          corsRules: []
-      }
-      deleteRetentionPolicy: {
-          allowPermanentDelete: false
-          enabled: true
-          days: 7
-      }
+    containerDeleteRetentionPolicy: {
+      enabled: true
+      days: 7
+    }
+    cors: {
+      corsRules: []
+    }
+    deleteRetentionPolicy: {
+      allowPermanentDelete: false
+      enabled: true
+      days: 7
+    }
   }
 }
 
@@ -372,16 +522,16 @@ resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-04-01'
   name: 'default'
   parent: dataLakeStore
   properties: {
-      protocolSettings: {
-          smb: {}
-      }
-      cors: {
-          corsRules: []
-      }
-      shareDeleteRetentionPolicy: {
-          enabled: true
-          days: 7
-      }
+    protocolSettings: {
+      smb: {}
+    }
+    cors: {
+      corsRules: []
+    }
+    shareDeleteRetentionPolicy: {
+      enabled: true
+      days: 7
+    }
   }
 }
 
@@ -415,8 +565,7 @@ resource kv 'Microsoft.KeyVault/vaults@2023-07-01' = {
     tenantId: tenantId
     enableSoftDelete: true
     softDeleteRetentionInDays: 90
-    accessPolicies: [
-     ]
+    accessPolicies: []
     sku: {
       name: 'standard'
       family: 'A'
@@ -444,12 +593,59 @@ resource accountKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   }
 }
 
+resource adfKv 'Microsoft.KeyVault/vaults@2023-07-01' = {
+  name: adfKeyVaultName
+  location: location
+  properties: {
+    enabledForDeployment: false
+    enabledForDiskEncryption: false
+    enabledForTemplateDeployment: false
+    tenantId: tenantId
+    enableSoftDelete: true
+    softDeleteRetentionInDays: 90
+    accessPolicies: []
+    sku: {
+      name: 'standard'
+      family: 'A'
+    }
+    networkAcls: {
+      defaultAction: 'Allow'
+      bypass: 'AzureServices'
+    }
+    enableRbacAuthorization: true
+  }
+}
+
+resource adfToKeyVaultSecretsUserRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(adfKv.id, dataFactoryUserIdentity.id, 'Contributor')
+  scope: adfKv
+  properties: {
+    roleDefinitionId: keyVaultSecretsUserRole
+    principalId: dataFactoryUserIdentity.properties.principalId
+  }
+}
+
+resource dbPassKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: adfKv
+  name: 'dbPassword'
+  properties: {
+    value: administratorLoginPassword
+  }
+}
+
 resource sqlServer 'Microsoft.Sql/servers@2023-08-01-preview' = {
   name: serverName
   location: location
   properties: {
     administratorLogin: administratorLogin
     administratorLoginPassword: administratorLoginPassword
+  }
+  resource allowAzureServicesRule 'firewallRules' = {
+    name: 'AllowAllWindowsAzureIps'
+    properties: {
+      startIpAddress: '0.0.0.0'
+      endIpAddress: '0.0.0.0'
+    }
   }
 }
 
@@ -462,10 +658,10 @@ resource sqlDB 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
     tier: 'Standard'
     capacity: 10
   }
-  properties:{
+  properties: {
     zoneRedundant: false
     readScale: 'Disabled'
-    requestedBackupStorageRedundancy:'Local'
+    requestedBackupStorageRedundancy: 'Local'
   }
 }
 
@@ -477,3 +673,4 @@ output databricksWorkpaceUrl string = 'https://${databricksWorkpace.properties.w
 output databricksKeyVaultName string = keyVaultName
 output databricksKeyVaultUrl string = kv.properties.vaultUri
 output databricksKeyVaultResourceId string = kv.id
+output adfKeyVaultName string = adfKeyVaultName

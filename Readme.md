@@ -101,7 +101,11 @@ Azure key vault contains the secret which will allow Azure Databricks to connect
   echo $DATABRICKS_KEY_VAULT_RESOURCE_ID
 ```
 
-### 7. Execute the Azure Data Factory Pipeline
+### 7. Create Database Objects
+
+- From folder sql
+
+### 8. Execute the Azure Data Factory Pipeline
 
 - Go to Azure Data Factory,
 - Launch Azure Data Factory studio
@@ -114,13 +118,15 @@ The pipe consumes the api and saves the data on Azure Data Lake, folder **bronze
 
 Then the databricks notebook is executed, but so far is a simple notebook. The execution could be check, but it is doing nothing.
 
-### 8. Clean Up
+### 9. Clean Up
 
 When you're done, delete the resources and the resource group:
 
 ```bash
 export DATABRICKS_KEY_VAULT_NAME=$(az deployment group show -g ${RESOURCEGROUP} --name main --query properties.outputs.databricksKeyVaultName.value --output tsv)
+export ADF_KEY_VAULT_NAME=$(az deployment group show -g ${RESOURCEGROUP} --name main --query properties.outputs.adfKeyVaultName.value --output tsv)
 
 az group delete -n $RESOURCEGROUP -y
 az keyvault purge --name $DATABRICKS_KEY_VAULT_NAME
+az keyvault purge --name $ADF_KEY_VAULT_NAME
 ```
