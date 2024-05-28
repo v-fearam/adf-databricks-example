@@ -20,7 +20,7 @@ CREATE TYPE [dbo].[DimNamesType] AS TABLE(
 )
 GO
 
-CREATE PROCEDURE spOverwriteDimyNames
+CREATE PROCEDURE spOverwriteDimNames
     @DimNames [dbo].[DimNamesType] READONLY
 AS
 BEGIN
@@ -47,7 +47,7 @@ CREATE TYPE [dbo].[DimYearsType] AS TABLE(
 )
 GO
 
-CREATE PROCEDURE spOverwriteDimyYears
+CREATE PROCEDURE spOverwriteDimYears
     @DimYears [dbo].[DimYearsType] READONLY
 AS
 BEGIN
@@ -74,7 +74,7 @@ CREATE TYPE [dbo].[DimLocationsType] AS TABLE(
 )
 GO
 
-CREATE PROCEDURE spOverwriteDimyLocations
+CREATE PROCEDURE spOverwriteDimLocations
     @DimLocations [dbo].[DimLocationsType] READONLY
 AS
 BEGIN

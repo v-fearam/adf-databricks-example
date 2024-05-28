@@ -412,6 +412,44 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           enableStaging: false
           translator: {
             type: 'TabularTranslator'
+            mappings: [
+              {
+                source: {
+                  name: 'sid'
+                  type: 'Int64'
+                  physicalType: 'INT64'
+                }
+                sink: {
+                  name: 'sid'
+                  type: 'Int64'
+                  physicalType: 'bigint'
+                }
+              }
+              {
+                source: {
+                  name: 'first_name'
+                  type: 'String'
+                  physicalType: 'UTF8'
+                }
+                sink: {
+                  name: 'first_name'
+                  type: 'String'
+                  physicalType: 'nvarchar'
+                }
+              }
+              {
+                source: {
+                  name: 'sex'
+                  type: 'String'
+                  physicalType: 'UTF8'
+                }
+                sink: {
+                  name: 'sex'
+                  type: 'String'
+                  physicalType: 'nvarchar'
+                }
+              }
+            ]
             typeConversion: true
             typeConversionSettings: {
               allowDataTruncation: true
@@ -471,6 +509,32 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           enableStaging: false
           translator: {
             type: 'TabularTranslator'
+            mappings: [
+              {
+                source: {
+                  name: 'sid'
+                  type: 'Int64'
+                  physicalType: 'INT64'
+                }
+                sink: {
+                  name: 'sid'
+                  type: 'Int64'
+                  physicalType: 'bigint'
+                }
+              }
+              {
+                source: {
+                  name: 'county'
+                  type: 'String'
+                  physicalType: 'UTF8'
+                }
+                sink: {
+                  name: 'county'
+                  type: 'String'
+                  physicalType: 'nvarchar'
+                }
+              }
+            ]
             typeConversion: true
             typeConversionSettings: {
               allowDataTruncation: true
@@ -530,6 +594,32 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           enableStaging: false
           translator: {
             type: 'TabularTranslator'
+            mappings: [
+              {
+                source: {
+                  name: 'sid'
+                  type: 'Int64'
+                  physicalType: 'INT64'
+                }
+                sink: {
+                  name: 'sid'
+                  type: 'Int64'
+                  physicalType: 'bigint'
+                }
+              }
+              {
+                source: {
+                  name: 'year'
+                  type: 'Int32'
+                  physicalType: 'INT32'
+                }
+                sink: {
+                  name: 'year'
+                  type: 'Int32'
+                  physicalType: 'int'
+                }
+              }
+            ]
             typeConversion: true
             typeConversionSettings: {
               allowDataTruncation: true

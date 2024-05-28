@@ -118,7 +118,21 @@ The pipe consumes the api and saves the data on Azure Data Lake, folder **bronze
 
 Then the databricks notebook is executed, but so far is a simple notebook. The execution could be check, but it is doing nothing.
 
-### 9. Clean Up
+### 9. Execute in database
+
+```sql
+
+SELECT top 10  n.first_name, SUM(f.count) AS total_count
+FROM fact_babynames f
+JOIN dim_names n ON f.nameSid = n.sid
+JOIN dim_years y ON f.yearSid = y.sid
+WHERE n.sex = 'M' AND y.year = 2021
+GROUP BY n.first_name
+ORDER BY total_count DESC
+
+```
+
+### 10. Clean Up
 
 When you're done, delete the resources and the resource group:
 
