@@ -103,7 +103,15 @@ Azure key vault contains the secret which will allow Azure Databricks to connect
 
 ### 7. Create Database Objects
 
-- From folder sql
+It is time to create the star model in the SQL database, which will be populated by the pipeline. The data analyst thinks and designs the model based on the report requirements.
+
+1. Navigate to the resource group using the Azure Portal.
+2. Select the SQL Database
+3. Select the Query Editor
+4. Enter your username and password. The first time you do this, you’ll need to configure the firewall by following the portal instructions.
+5. Copy the code from ./sql/star_model.sql, and paste on the Query Editor
+6. Execute
+7. Review the table that was created and explore any [store procedures](https://learn.microsoft.com/azure/data-factory/connector-sql-server?tabs=data-factory#invoke-a-stored-procedure-from-a-sql-sink)
 
 ### 8. Execute the Azure Data Factory Pipeline
 
@@ -119,6 +127,8 @@ The pipe consumes the api and saves the data on Azure Data Lake, folder **bronze
 Then the databricks notebook is executed, but so far is a simple notebook. The execution could be check, but it is doing nothing.
 
 ### 9. Execute in database
+
+Navigate to the resource group using the SQL Database-Query Editor again, and execute the following query to retrieve the most common male names used in New York in 2021
 
 ```sql
 

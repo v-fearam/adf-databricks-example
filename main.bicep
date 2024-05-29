@@ -691,6 +691,68 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           enableStaging: false
           translator: {
             type: 'TabularTranslator'
+            mappings: [
+              {
+                source: {
+                  name: 'sid'
+                  type: 'Int64'
+                  physicalType: 'INT64'
+                }
+                sink: {
+                  name: 'sid'
+                  type: 'Int64'
+                  physicalType: 'bigint'
+                }
+              }
+              {
+                source: {
+                  name: 'nameSid'
+                  type: 'Int64'
+                  physicalType: 'INT64'
+                }
+                sink: {
+                  name: 'nameSid'
+                  type: 'Int64'
+                  physicalType: 'bigint'
+                }
+              }
+              {
+                source: {
+                  name: 'yearSid'
+                  type: 'Int64'
+                  physicalType: 'INT64'
+                }
+                sink: {
+                  name: 'yearSid'
+                  type: 'Int64'
+                  physicalType: 'bigint'
+                }
+              }
+              {
+                source: {
+                  name: 'locationSid'
+                  type: 'String'
+                  physicalType: 'UTF8'
+                }
+                sink: {
+                  name: 'locationSid'
+                  type: 'Int64'
+                  physicalType: 'bigint'
+                }
+              }
+              {
+                source: {
+                  name: 'count'
+                  type: 'Int32'
+                  physicalType: 'INT32'
+                }
+                sink: {
+                  name: 'count'
+                  type: 'Int32'
+                  physicalType: 'int'
+                }
+              }
+            ]
             typeConversion: true
             typeConversionSettings: {
               allowDataTruncation: true
