@@ -66,6 +66,8 @@ The Pipeline deployed:
 
 ![ADF Pipeline](adf-pipeline.gif "ADF Pipeline")
 
+The pipeline consumes New York Health data. This example works with baby names https://health.data.ny.gov/Health/Baby-Names-Beginning-2007/jxy9-yhdk/data_preview.
+
 1. Retrieve the file from New York Health Data and store it in the data lake landing containe
 1. A Databricks Notebook execution. Move data from file to a Delta Table on bronze container.The process appends information and adds control metadata, including processing time and file name.
 1. Execute another Databricks Notebook to clean the bronze data, eliminate duplicates, and merge it into a Delta table in the silver container.
@@ -74,7 +76,7 @@ The Pipeline deployed:
 
 ### 5. Upload databricks notebook
 
-There is a notebook on the folder `./notebooks`. It is possible to create it manually using azure portal adding the same content or upload using databriks cli.
+There are notebooks on the folder `./notebooks`. It is possible to create it manually using azure portal adding the same content or upload using databriks cli.
 
 [Azure Databricks personal access token authentication](https://learn.microsoft.com/azure/databricks/dev-tools/cli/authentication#--azure-databricks-personal-access-token-authentication)  
 To create a personal access token, do the following:
@@ -137,14 +139,9 @@ It is time to create the star model in the SQL database, which will be populated
 - Add Trigger-> Trigger Now
 - Go to monitor and wait to the pipeline success
 
-The pipeline consumes New York Health data. This example works with baby names https://health.data.ny.gov/Health/Baby-Names-Beginning-2007/jxy9-yhdk/data_preview.
-The pipe consumes the api and saves the data on Azure Data Lake, folder **bronze**. The data is a json file with baby names from 2007.
-
-Then the databricks notebook is executed, but so far is a simple notebook. The execution could be check, but it is doing nothing.
-
 ### 9. Execute in database
 
-Navigate to the resource group using the SQL Database-Query Editor again, and execute the following query to retrieve the most common male names used in New York in 2021
+Navigate to the resource group using the SQL Database-Query Editor again, and execute the following query to retrieve the most common male names used in New York
 
 ```sql
 
@@ -152,7 +149,7 @@ SELECT top 10  n.first_name, SUM(f.count) AS total_count
 FROM fact_babynames f
 JOIN dim_names n ON f.nameSid = n.sid
 JOIN dim_years y ON f.yearSid = y.sid
-WHERE n.sex = 'M' AND y.year = 2021
+WHERE n.sex = 'M'
 GROUP BY n.first_name
 ORDER BY total_count DESC
 
