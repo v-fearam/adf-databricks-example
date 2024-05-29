@@ -45,20 +45,36 @@ Deploy your resources using a Bicep template (e.g., `main.bicep`):
   az deployment group create -f ./main.bicep -g ${RESOURCEGROUP} -p administratorLoginPassword='changePass123!' username=${USERNAME}
 ```
 
+![created resources](Resources.jpg "Created Resources")
+
 The bicep deploys:
 
 - User identity for Azure Data Factory
 - Azure Data Lake, the previous identity is a collaborator.
 - Azure Databricks Workpace, the previous identity is a collaborator.
+- A Azure Data Fabrick Key vault, the previous identity is a collaborator. It includes SQL database secrets
 - Azure Data Factory. The previous identity is asociated
-  - The Azure Data Factory contains a Pipeline with 2 activities
-  1. Copy Data from New York Health Data to Azure Data Lake bronze folder
-  2. A Databricks Notebook execution
+  - The Azure Data Factory contains a Pipeline
+- A Databricks Key Vault. It includes Azure Data Lake secrets.
 - A SQL Database
+
+Azure Data Factory will connect ADF key Vault, Databricks, and Data Lake using User Managed Identity.  
+Databricks contact data Lake Base on the credentials in the Key Vault associated (Databricks Scope).  
+Azure Data Factory will connect SQL database based on the credentials store in its Key Vault.  
+
+The Pipeline deployed:
+
+![ADF Pipeline](adf-pipeline.gif "ADF Pipeline")
+
+1. Download file from New York Health Data to data lake landing container.
+1. A Databricks Notebook execution. Move data from file to a Delta Table on bronze container, it only append information and add control metadata like processing time and file name.
+1. A Databricks Notebook execution. Clean bronce data, avoid duplication and merge the data in a Delta table in the silver container.
+1. A Databricks Notebook execution. Take the silver data and populate a star model in a gold container.
+1. Move the star model, dimension tables and fact table, to a SQL Database
 
 ### 5. Upload databricks notebook
 
-There is a notebook on the folder `./notebooks`. It is possible to create it manually using azure portal adding the same content or upload using databriks cli.  
+There is a notebook on the folder `./notebooks`. It is possible to create it manually using azure portal adding the same content or upload using databriks cli.
 
 [Azure Databricks personal access token authentication](https://learn.microsoft.com/azure/databricks/dev-tools/cli/authentication#--azure-databricks-personal-access-token-authentication)  
 To create a personal access token, do the following:
@@ -74,16 +90,16 @@ To create a personal access token, do the following:
 ```bash
     #  Upload databricks notebook using databriks cli
     export DATABRICKS_WORKPACE_URL=$(az deployment group show -g ${RESOURCEGROUP} --name main --query properties.outputs.databricksWorkpaceUrl.value --output tsv)
-    databricks configure --host $DATABRICKS_WORKPACE_URL 
+    databricks configure --host $DATABRICKS_WORKPACE_URL
     # For the prompt Personal Access Token, enter the Azure Databricks personal access token for your workspace
 
     # Upload the local notebooks to your workpace
     databricks sync ./notebooks/ /Users/${USERNAME}/myLib
 ```
 
-### 6. [Create an Azure Key Vault-backed secret scope](https://learn.microsoft.com/azure/databricks/security/secrets/secret-scopes#create-an-azure-key-vault-backed-secret-scope)  
+### 6. [Create an Azure Key Vault-backed secret scope](https://learn.microsoft.com/azure/databricks/security/secrets/secret-scopes#create-an-azure-key-vault-backed-secret-scope)
 
-Azure key vault contains the secret which will allow Azure Databricks to connect Azure Data Lake. The notebook will get the secrets from a Databricks secret scope.  
+Azure key vault contains the secret which will allow Azure Databricks to connect Azure Data Lake. The notebook will get the secrets from a Databricks secret scope.
 
 1. Go to https://-databricks-instance-/**#secrets/createScope**. Replace -databricks-instance- with the workspace URL of your Azure Databricks deployment. This URL is case sensitive (scope in createScope must be uppercase).
 
