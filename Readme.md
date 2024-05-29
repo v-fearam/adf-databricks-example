@@ -23,7 +23,7 @@ az login
 Define the necessary environment variables for your project:
 
 ```bash
-    export LOCATION=centralus
+    export LOCATION=<selected location>
     export RESOURCEGROUP_BASE_NAME=<put a name>
     export RESOURCEGROUP=${RESOURCEGROUP_BASE_NAME}-${LOCATION}
     export USERNAME=<azure user name>
@@ -39,7 +39,7 @@ Create an Azure resource group with the specified name and location:
 
 ### 4. Deploy Resources
 
-Deploy your resources using a Bicep template (e.g., `main.bicep`):
+Deploy your resources using a Bicep template
 
 ```bash
   az deployment group create -f ./main.bicep -g ${RESOURCEGROUP} -p administratorLoginPassword='changePass123!' username=${USERNAME}
@@ -59,18 +59,18 @@ The bicep deploys:
 - A SQL Database
 
 Azure Data Factory will connect ADF key Vault, Databricks, and Data Lake using User Managed Identity.  
-Databricks contact data Lake Base on the credentials in the Key Vault associated (Databricks Scope).  
+Databricks will contact data Lake based on the credentials in the Key Vault associated (Databricks Scope).  
 Azure Data Factory will connect SQL database based on the credentials store in its Key Vault.  
 
 The Pipeline deployed:
 
 ![ADF Pipeline](adf-pipeline.gif "ADF Pipeline")
 
-1. Download file from New York Health Data to data lake landing container.
-1. A Databricks Notebook execution. Move data from file to a Delta Table on bronze container, it only append information and add control metadata like processing time and file name.
-1. A Databricks Notebook execution. Clean bronce data, avoid duplication and merge the data in a Delta table in the silver container.
-1. A Databricks Notebook execution. Take the silver data and populate a star model in a gold container.
-1. Move the star model, dimension tables and fact table, to a SQL Database
+1. Retrieve the file from New York Health Data and store it in the data lake landing containe
+1. A Databricks Notebook execution. Move data from file to a Delta Table on bronze container.The process appends information and adds control metadata, including processing time and file name.
+1. Execute another Databricks Notebook to clean the bronze data, eliminate duplicates, and merge it into a Delta table in the silver container.
+1. Use a Databricks Notebook to take the silver data and populate a star model in the gold container.
+1. Transfer the star model (including dimension tables and fact table) from the gold container to a SQL Database.
 
 ### 5. Upload databricks notebook
 
