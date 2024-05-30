@@ -838,6 +838,9 @@ resource adfToDataLakeStoreContributorRoleAssignment 'Microsoft.Authorization/ro
     roleDefinitionId: storageBlobDataContributorRole
     principalId: dataFactoryUserIdentity.properties.principalId
   }
+  dependsOn:[
+    databricksWorkpace
+  ]
 }
 
 resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-04-01' = {
@@ -964,6 +967,9 @@ resource adfToKeyVaultSecretsUserRoleAssignment 'Microsoft.Authorization/roleAss
     roleDefinitionId: keyVaultSecretsUserRole
     principalId: dataFactoryUserIdentity.properties.principalId
   }
+  dependsOn:[
+    databricksWorkpace
+  ]
 }
 
 resource dbPassKeySecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
