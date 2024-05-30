@@ -4,7 +4,7 @@
 
 - **Azure CLI**: Ensure you have the [Azure Command-Line Interface (CLI) installed](https://learn.microsoft.com/cli/azure/install-azure-cli), at least 2.60.0.
 - **Bash or Windows Subsystem for Linux [WSL](https://learn.microsoft.com/windows/wsl/install)**: You'll need a Bash-compatible shell environment.
-- **Databriks Cli**: [Install databriks cli to manipulate cluster](https://learn.microsoft.com/azure/databricks/dev-tools/cli/tutorial), at least v0.219.0
+- **Databriks Cli**: [Install databriks cli to manipulate cluster](https://learn.microsoft.com/azure/databricks/dev-tools/cli/tutorial), at least v0.219.0 (Optional)
 
 ## Steps
 
@@ -68,15 +68,15 @@ The Pipeline deployed:
 
 The pipeline consumes New York Health data. This example works with baby names https://health.data.ny.gov/Health/Baby-Names-Beginning-2007/jxy9-yhdk/data_preview.
 
-1. Retrieve the file from New York Health Data and store it in the data lake landing containe
-1. A Databricks Notebook execution. Move data from file to a Delta Table on bronze container.The process appends information and adds control metadata, including processing time and file name.
-1. Execute another Databricks Notebook to clean the bronze data, eliminate duplicates, and merge it into a Delta table in the silver container.
-1. Use a Databricks Notebook to take the silver data and populate a star model in the gold container.
+1. Retrieve the file from New York Health Data and store it in the data lake landing container
+1. A Databricks Notebook execution (LandingToBronze). Move data from file to a Delta Table on bronze container.The process **appends** information and adds control metadata, including processing time and file name.
+1. Execute another Databricks Notebook (BronzeToSilver) to clean the bronze data, eliminate duplicates, and **merge** it into a Delta table in the silver container.
+1. Use a Databricks Notebook (SilverToGold) to take the silver data and populate a star model in the gold container.
 1. Transfer the star model (including dimension tables and fact table) from the gold container to a SQL Database.
 
 ### 5. Upload databricks notebook
 
-There are notebooks on the folder `./notebooks`. It is possible to create it manually using azure portal adding the same content or upload using databriks cli.
+There are notebooks on the folder `./notebooks`. It is possible to upload them manually using azure portal or upload them using databriks cli.
 
 [Azure Databricks personal access token authentication](https://learn.microsoft.com/azure/databricks/dev-tools/cli/authentication#--azure-databricks-personal-access-token-authentication)  
 To create a personal access token, do the following:
@@ -141,18 +141,26 @@ It is time to create the star model in the SQL database, which will be populated
 
 ### 9. Execute in database
 
-Navigate to the resource group using the SQL Database-Query Editor again, and execute the following query to retrieve the most common male names used in New York
+Navigate to the resource group using the SQL Database-Query Editor again, and execute the following query. 
 
 ```sql
-
+// most common female names used in New York in 2019
 SELECT top 10  n.first_name, SUM(f.count) AS total_count
 FROM fact_babynames f
 JOIN dim_names n ON f.nameSid = n.sid
 JOIN dim_years y ON f.yearSid = y.sid
-WHERE n.sex = 'M'
+WHERE n.sex = 'F' and y.year = 2019
 GROUP BY n.first_name
 ORDER BY total_count DESC
 
+// Abel by year
+SELECT y.year, sum(f.count) as total_count
+FROM fact_babynames f
+JOIN dim_names n ON f.nameSid = n.sid
+JOIN dim_years y ON f.yearSid = y.sid
+WHERE n.first_name= 'ABEL'
+GROUP BY y.year
+ORDER BY total_count DESC
 ```
 
 ### 10. Clean Up

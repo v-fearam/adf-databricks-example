@@ -190,7 +190,7 @@ resource dataFactoryDataSetIn 'Microsoft.DataFactory/factories/datasets@2018-06-
     typeProperties: {
       location: {
         type: 'HttpServerLocation'
-        relativeUrl: '/resource/jxy9-yhdk.csv'
+        relativeUrl: '/resource/jxy9-yhdk.csv?$limit=100000'
       }
       columnDelimiter: ','
       escapeChar: '\\'
