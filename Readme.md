@@ -144,7 +144,7 @@ It is time to create the star model in the SQL database, which will be populated
 Navigate to the resource group using the SQL Database-Query Editor again, and execute the following query. 
 
 ```sql
-// most common female names used in New York in 2019
+-- most common female names used in New York in 2019
 SELECT top 10  n.first_name, SUM(f.count) AS total_count
 FROM fact_babynames f
 JOIN dim_names n ON f.nameSid = n.sid
@@ -153,7 +153,7 @@ WHERE n.sex = 'F' and y.year = 2019
 GROUP BY n.first_name
 ORDER BY total_count DESC
 
-// Abel by year
+-- Abel by year
 SELECT y.year, sum(f.count) as total_count
 FROM fact_babynames f
 JOIN dim_names n ON f.nameSid = n.sid
