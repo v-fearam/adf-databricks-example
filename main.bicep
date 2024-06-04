@@ -37,7 +37,7 @@ var sqlServerLinkedServiceName = 'sqlServer_LS'
 var keyVaultLinkedServiceName = 'keyVault_LS'
 var databricksLinkedServiceName = 'databricks_LS'
 var dataFactoryDataSetInName = 'babyNamesNY_DS'
-var csvDataSetName = 'storeBronzeBabyName_DS'
+var csvDataSetName = 'storeLandingZoneBabyNames_DS'
 var parquetDataSetName = 'Parquet_DS'
 var azureSqlBabyNamesDataSetName = 'AzureSqlBabyNames_DS'
 var pipelineName = 'IngestNYBabyNames_PL'
@@ -683,9 +683,9 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           }
           sink: {
             type: 'AzureSqlSink'
-            sqlWriterStoredProcedureName: '[dbo].[spOverwriteFactBabyNames]'
-            sqlWriterTableType: 'FactBabyNamesType'
-            storedProcedureTableTypeParameterName: 'FactBabyNames'
+            sqlWriterStoredProcedureName: '[dbo].[spOverwritefact_baby_names]'
+            sqlWriterTableType: 'fact_baby_namesType'
+            storedProcedureTableTypeParameterName: 'fact_baby_names'
             disableMetricsCollection: false
           }
           enableStaging: false

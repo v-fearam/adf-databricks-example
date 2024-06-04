@@ -98,7 +98,7 @@ CREATE TABLE [dbo].[fact_babynames](
 ) 
 GO
 
-CREATE TYPE [dbo].[FactBabyNamesType] AS TABLE(
+CREATE TYPE [dbo].[fact_baby_namesType] AS TABLE(
     [sid] [bigint],
 	[nameSid] [bigint] NULL,
 	[yearSid] [bigint] NULL,
@@ -107,12 +107,12 @@ CREATE TYPE [dbo].[FactBabyNamesType] AS TABLE(
 )
 GO
 
-CREATE PROCEDURE spOverwriteFactBabyNames
-    @FactBabyNames [dbo].[FactBabyNamesType] READONLY
+CREATE PROCEDURE spOverwritefact_baby_names
+    @fact_baby_names [dbo].[fact_baby_namesType] READONLY
 AS
 BEGIN
 MERGE [dbo].[fact_babynames] AS target
-USING @FactBabyNames AS source
+USING @fact_baby_names AS source
 ON (target.sid = source.sid)
 WHEN MATCHED THEN
     UPDATE SET nameSid = source.nameSid, yearSid = source.yearSid, locationSid = source.locationSid, count = source.count
