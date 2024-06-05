@@ -75,7 +75,7 @@ BEGIN
             year
     )
 MERGE [dbo].[dim_years] AS target
-USING @DeduplicatedSource AS source
+USING DeduplicatedSource AS source
 ON (target.sid = source.sid)
 WHEN MATCHED THEN
     UPDATE SET year = source.year
@@ -112,7 +112,7 @@ BEGIN
             county
     )
 MERGE [dbo].[dim_locations] AS target
-USING @DeduplicatedSource AS source
+USING DeduplicatedSource AS source
 ON (target.sid = source.sid)
 WHEN MATCHED THEN
     UPDATE SET county = source.county
@@ -161,7 +161,7 @@ BEGIN
             count
     )
 MERGE [dbo].[fact_babynames] AS target
-USING @DeduplicatedSource AS source
+USING DeduplicatedSource AS source
 ON (target.sid = source.sid)
 WHEN MATCHED THEN
     UPDATE SET nameSid = source.nameSid, yearSid = source.yearSid, locationSid = source.locationSid, count = source.count
