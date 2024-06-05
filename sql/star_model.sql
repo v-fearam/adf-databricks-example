@@ -24,16 +24,29 @@ CREATE PROCEDURE spOverwriteDimNames
     @DimNames [dbo].[DimNamesType] READONLY
 AS
 BEGIN
-MERGE [dbo].[dim_names] AS target
-USING @DimNames AS source
-ON (target.sid = source.sid)
-WHEN MATCHED THEN
-    UPDATE SET first_name = source.first_name, sex = source.sex
-WHEN NOT MATCHED THEN
-    INSERT (sid, first_name, sex)
-    VALUES (source.sid, source.first_name, source.sex);
+    ;WITH DeduplicatedSource AS (
+        SELECT
+            sid,
+            first_name,
+            sex
+        FROM
+            @DimNames
+        GROUP BY
+            sid,
+            first_name,
+            sex
+    )
+    MERGE [dbo].[dim_names] AS target
+    USING DeduplicatedSource AS source
+    ON (target.sid = source.sid)
+    WHEN MATCHED THEN
+        UPDATE SET first_name = source.first_name, sex = source.sex
+    WHEN NOT MATCHED THEN
+        INSERT (sid, first_name, sex)
+        VALUES (source.sid, source.first_name, source.sex);
 END
 GO
+
 --------------dim years
 CREATE TABLE [dbo].[dim_years](
 	[sid] [bigint] primary key,
@@ -51,8 +64,18 @@ CREATE PROCEDURE spOverwriteDimYears
     @DimYears [dbo].[DimYearsType] READONLY
 AS
 BEGIN
+    ;WITH DeduplicatedSource AS (
+        SELECT
+            sid,
+            year
+        FROM
+            @DimYears
+        GROUP BY
+            sid,
+            year
+    )
 MERGE [dbo].[dim_years] AS target
-USING @DimYears AS source
+USING @DeduplicatedSource AS source
 ON (target.sid = source.sid)
 WHEN MATCHED THEN
     UPDATE SET year = source.year
@@ -78,8 +101,18 @@ CREATE PROCEDURE spOverwriteDimLocations
     @DimLocations [dbo].[DimLocationsType] READONLY
 AS
 BEGIN
+    ;WITH DeduplicatedSource AS (
+        SELECT
+            sid,
+            county
+        FROM
+            @DimLocations
+        GROUP BY
+            sid,
+            county
+    )
 MERGE [dbo].[dim_locations] AS target
-USING @DimLocations AS source
+USING @DeduplicatedSource AS source
 ON (target.sid = source.sid)
 WHEN MATCHED THEN
     UPDATE SET county = source.county
@@ -111,8 +144,24 @@ CREATE PROCEDURE spOverwritefact_baby_names
     @fact_baby_names [dbo].[fact_baby_namesType] READONLY
 AS
 BEGIN
+    ;WITH DeduplicatedSource AS (
+        SELECT
+            sid,
+            nameSid,
+            yearSid,
+            locationSid,
+            count
+        FROM
+            @fact_baby_names
+        GROUP BY
+            sid,
+            nameSid,
+            yearSid,
+            locationSid,
+            count
+    )
 MERGE [dbo].[fact_babynames] AS target
-USING @fact_baby_names AS source
+USING @DeduplicatedSource AS source
 ON (target.sid = source.sid)
 WHEN MATCHED THEN
     UPDATE SET nameSid = source.nameSid, yearSid = source.yearSid, locationSid = source.locationSid, count = source.count
