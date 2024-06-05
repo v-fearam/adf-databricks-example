@@ -1,16 +1,20 @@
-# Project Setup Guide
+# Contoso's Data Processing Journey: A Project Setup Guide
 
-## Requirements
+Welcome to the project setup guide for Contoso's data processing pipeline. This guide will walk you through the steps needed to set up a simple, yet effective, data processing pipeline. The example is simple from a data point of view, but it's designed to help you learn about the technology and how to build the pipeline.
 
-- **Azure CLI**: Ensure you have the [Azure Command-Line Interface (CLI) installed](https://learn.microsoft.com/cli/azure/install-azure-cli), at least 2.60.0.
-- **Bash or Windows Subsystem for Linux [WSL](https://learn.microsoft.com/windows/wsl/install)**: You'll need a Bash-compatible shell environment.
-- **Databriks Cli**: [Install databriks cli to manipulate cluster](https://learn.microsoft.com/azure/databricks/dev-tools/cli/tutorial), at least v0.219.0 (Optional)
+## Prerequisites
 
-## Steps
+Before we embark on this adventure, ensure you have the following tools ready:
 
-### 1. Azure Login
+- **Azure CLI**: Version 2.60.0 or higher. Install from [Azure CLI's official page](https://learn.microsoft.com/cli/azure/install-azure-cli%29).
+- **Bash or WSL**: A Bash-compatible shell environment is crucial. If you're on Windows, check out [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/windows/wsl/install%29).
+- **Databricks CLI**: Optional, but recommended for cluster manipulation. Install instructions are available [here](https://learn.microsoft.com/azure/databricks/dev-tools/cli/tutorial%29), version 0.219.0 or higher.
 
-First, log in to your Azure account using the following command:
+## The Contoso Data Pipeline Adventure
+
+### Step 1: Azure Login
+
+Our journey begins with logging into Azure. Use the command below:
 
 ```bash
 az login
@@ -18,36 +22,36 @@ az login
 # az account set --subscription <subscription_id>
 ```
 
-### 2. Set Environment Variables
+### Step 2: Environment Setup
 
-Define the necessary environment variables for your project:
+Like any good adventure, we need to prepare our environment:
 
 ```bash
-    export LOCATION=<selected location>
-    export RESOURCEGROUP_BASE_NAME=<put a name>
-    export RESOURCEGROUP=${RESOURCEGROUP_BASE_NAME}-${LOCATION}
-    export USERNAME=<azure user name>
+export LOCATION=<your chosen location>
+export RESOURCEGROUP_BASE_NAME=<your resource group name>
+export RESOURCEGROUP=${RESOURCEGROUP_BASE_NAME}-${LOCATION}
+export USERNAME=<your Azure username>
 ```
 
-### 3. Create a Resource Group
+### 3. Resource Group Creation
 
-Create an Azure resource group with the specified name and location:
+With our map in hand, we create a resource group in our chosen location:
 
 ```bash
     az group create -n $RESOURCEGROUP -l $LOCATION
 ```
 
-### 4. Deploy Resources
+### 4. Deploying Resources
 
-Deploy your resources using a Bicep template
+Using a Bicep template, we deploy the resources needed for our data processing quest:
 
 ```bash
   az deployment group create -f ./main.bicep -g ${RESOURCEGROUP} -p administratorLoginPassword='changePass123!' username=${USERNAME}
 ```
 
-![created resources](Resources.jpg "Created Resources")
+![Contoso’s Created Resources](Resources.jpg "Contoso’s Created Resources")
 
-The bicep deploys:
+The Bicep template conjures up:
 
 - User identity for Azure Data Factory
 - Azure Data Lake, the previous identity is a collaborator.
@@ -58,20 +62,17 @@ The bicep deploys:
 - A Databricks Key Vault. It includes Azure Data Lake secrets.
 - A SQL Database
 
-Azure Data Factory will connect ADF key Vault, Databricks, and Data Lake using User Managed Identity.  
-Databricks will contact data Lake based on the credentials in the Key Vault associated (Databricks Scope).  
-Azure Data Factory will connect SQL database based on the credentials store in its Key Vault.  
+The Tale of Data Transformation:
 
-The Pipeline deployed:
-
+Our pipeline, depicted below, is a tale of transformation:
 ![ADF Pipeline](adf-pipeline.gif "ADF Pipeline")
 
 The pipeline consumes New York Health data. This example works with baby names https://health.data.ny.gov/Health/Baby-Names-Beginning-2007/jxy9-yhdk/data_preview.
 
 1. Retrieve the file from New York Health Data and store it in the data lake landing container
-1. A Databricks Notebook execution (LandingToBronze). Move data from file to a Delta Table on bronze container.The process **appends** information and adds control metadata, including processing time and file name.
-1. Execute another Databricks Notebook (BronzeToSilver) to clean the bronze data, eliminate duplicates, and **merge** it into a Delta table in the silver container.
-1. Use a Databricks Notebook (SilverToGold) to take the silver data and populate a star model in the gold container.
+1. LandingToBronze: A Databricks Notebook moves data to a Delta Table on bronze container.The process **appends** information and adds control metadata, including processing time and file name.
+1. BronzeToSilver: Cleansing the data, removing duplicates, and **merging** into the silver container.
+1. SilverToGold: Populating a star model in the gold container.
 1. Transfer the star model (including dimension tables and fact table) from the gold container to a SQL Database.
 
 ### 5. Upload databricks notebook
