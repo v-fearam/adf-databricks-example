@@ -75,12 +75,14 @@ The pipeline consumes New York Health data. This example works with baby names h
 1. SilverToGold: Populating a star model in the gold container.
 1. Transfer the star model (including dimension tables and fact table) from the gold container to a SQL Database.
 
-### 5. Upload databricks notebook
+### 5. The Chronicles of Databricks Notebooks
 
-There are notebooks on the folder `./notebooks`. It is possible to upload them manually using azure portal or upload them using databriks cli.
+In the ./notebooks directory, you’ll find the scripts of our chronicles. Upload them to Databricks using the CLI or manually via the Azure portal.
 
-[Azure Databricks personal access token authentication](https://learn.microsoft.com/azure/databricks/dev-tools/cli/authentication#--azure-databricks-personal-access-token-authentication)  
-To create a personal access token, do the following:
+Manually, it could be done inside databricks. Inside the workspace section you can import. Azure data factory assumes that the notebooks are inside a _myLib_ folder in the user workspace.
+
+Using Azure databricks cli, we need a token to authenticate the cli to the cluster. [Azure Databricks personal access token authentication](https://learn.microsoft.com/azure/databricks/dev-tools/cli/authentication#--azure-databricks-personal-access-token-authentication)  
+To create a personal access token, do the following: 
 
 1. In your Azure Databricks workspace, click your Azure Databricks username in the top bar, and then select Settings from the drop down.
 1. Click Developer.
@@ -92,6 +94,8 @@ To create a personal access token, do the following:
 
 ```bash
     #  Upload databricks notebook using databriks cli
+
+    # Authenticate databricks cli
     export DATABRICKS_WORKPACE_URL=$(az deployment group show -g ${RESOURCEGROUP} --name main --query properties.outputs.databricksWorkpaceUrl.value --output tsv)
     databricks configure --host $DATABRICKS_WORKPACE_URL
     # For the prompt Personal Access Token, enter the Azure Databricks personal access token for your workspace
@@ -100,9 +104,9 @@ To create a personal access token, do the following:
     databricks sync ./notebooks/ /Users/${USERNAME}/myLib
 ```
 
-### 6. [Create an Azure Key Vault-backed secret scope](https://learn.microsoft.com/azure/databricks/security/secrets/secret-scopes#create-an-azure-key-vault-backed-secret-scope)
+### 6. [Databricks Secret Scope Creation](https://learn.microsoft.com/azure/databricks/security/secrets/secret-scopes#create-an-azure-key-vault-backed-secret-scope)
 
-Azure key vault contains the secret which will allow Azure Databricks to connect Azure Data Lake. The notebook will get the secrets from a Databricks secret scope.
+Create an Azure Key Vault-backed secret scope to allow Databricks to access the Data Lake. The notebook will get the secrets from a Databricks Secret Scope.
 
 1. Go to https://-databricks-instance-/**#secrets/createScope**. Replace -databricks-instance- with the workspace URL of your Azure Databricks deployment. This URL is case sensitive (scope in createScope must be uppercase).
 
@@ -120,9 +124,9 @@ Azure key vault contains the secret which will allow Azure Databricks to connect
   echo $DATABRICKS_KEY_VAULT_RESOURCE_ID
 ```
 
-### 7. Create Database Objects
+### 7. The SQL Database Saga
 
-It is time to create the star model in the SQL database, which will be populated by the pipeline. The data analyst thinks and designs the model based on the report requirements.
+Our data analyst, armed with insights, creates a star model in the SQL database to be populated by the pipeline.
 
 1. Navigate to the resource group using the Azure Portal.
 2. Select the SQL Database
@@ -140,9 +144,9 @@ It is time to create the star model in the SQL database, which will be populated
 - Add Trigger-> Trigger Now
 - Go to monitor and wait to the pipeline success
 
-### 9. Execute in database
+### 9. The Quest for Insights
 
-Navigate to the resource group using the SQL Database-Query Editor again, and execute the following query. 
+Execute queries in the SQL Database to uncover the most popular names and trends. Navigate to the resource group using the SQL Database-Query Editor again.
 
 ```sql
 -- most common female names used in New York in 2019
@@ -164,7 +168,7 @@ GROUP BY y.year
 ORDER BY total_count DESC
 ```
 
-### 10. Clean Up
+### 10. The Journey’s End
 
 When you're done, delete the resources and the resource group:
 
