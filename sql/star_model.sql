@@ -141,7 +141,7 @@ CREATE TYPE [dbo].[FactBabyNamesType] AS TABLE(
 GO
 
 CREATE PROCEDURE spOverwriteFactBabyNamesType
-    @FactBabyNamesType [dbo].[FactBabyNamesType] READONLY
+    @FactBabyNames [dbo].[FactBabyNamesType] READONLY
 AS
 BEGIN
     ;WITH DeduplicatedSource AS (
@@ -152,7 +152,7 @@ BEGIN
             locationSid,
             count
         FROM
-            @FactBabyNamesType
+            @FactBabyNames
         GROUP BY
             sid,
             nameSid,
