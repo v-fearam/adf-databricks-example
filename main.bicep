@@ -683,9 +683,9 @@ resource dataFactoryPipeline 'Microsoft.DataFactory/factories/pipelines@2018-06-
           }
           sink: {
             type: 'AzureSqlSink'
-            sqlWriterStoredProcedureName: '[dbo].[spOverwritefact_baby_names]'
-            sqlWriterTableType: 'fact_baby_namesType'
-            storedProcedureTableTypeParameterName: 'fact_baby_names'
+            sqlWriterStoredProcedureName: '[dbo].[spOverwriteFactBabyNamesType]'
+            sqlWriterTableType: 'FactBabyNamesType'
+            storedProcedureTableTypeParameterName: 'FactBabyNames'
             disableMetricsCollection: false
           }
           enableStaging: false

@@ -131,7 +131,7 @@ CREATE TABLE [dbo].[fact_babynames](
 ) 
 GO
 
-CREATE TYPE [dbo].[fact_baby_namesType] AS TABLE(
+CREATE TYPE [dbo].[FactBabyNamesType] AS TABLE(
     [sid] [bigint],
 	[nameSid] [bigint] NULL,
 	[yearSid] [bigint] NULL,
@@ -140,8 +140,8 @@ CREATE TYPE [dbo].[fact_baby_namesType] AS TABLE(
 )
 GO
 
-CREATE PROCEDURE spOverwritefact_baby_names
-    @fact_baby_names [dbo].[fact_baby_namesType] READONLY
+CREATE PROCEDURE spOverwriteFactBabyNamesType
+    @FactBabyNamesType [dbo].[FactBabyNamesType] READONLY
 AS
 BEGIN
     ;WITH DeduplicatedSource AS (
@@ -152,7 +152,7 @@ BEGIN
             locationSid,
             count
         FROM
-            @fact_baby_names
+            @FactBabyNamesType
         GROUP BY
             sid,
             nameSid,
