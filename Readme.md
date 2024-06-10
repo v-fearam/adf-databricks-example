@@ -142,9 +142,18 @@ Our data analyst, armed with insights, creates a star model in the SQL database 
 - Launch Azure Data Factory studio
 - Go to Author/Pipeline -> IngestNYBabyNames_PL
 - Add Trigger-> Trigger Now
-- Go to monitor and wait to the pipeline success
 
-### 9. The Quest for Insights
+### 9. Moitoring
+
+You can [natively monitor all of your pipeline runs](https://learn.microsoft.com/azure/data-factory/monitor-visually#monitor-pipeline-runs) in the Azure Data Factory user experience. To access the monitoring feature, select the ‘Monitor & Manage’ tile in the Data Factory blade of the Azure portal. If you’re already in the ADF UX, click on the Monitor icon in the left sidebar.  
+
+By default, all data factory runs are displayed in the browser’s local time zone. If you change the time zone, all date/time fields adjust to the one you’ve selected.  
+
+Azure Databricks does not natively support sending log data to Azure [monitor](https://learn.microsoft.com/azure/architecture/databricks-monitoring/dashboards). owever, in the Azure Data Factory Monitoring tab, you can select the notebook execution activity (it may take some time to appear), click on the glases icon, and follow the [databricks link to check the notebock execution log](https://learn.microsoft.com/azure/data-factory/transform-data-using-databricks-notebook#monitor-the-pipeline-run).  
+
+Wait for the pipeline success.
+
+### 10. The Quest for Insights
 
 Execute queries in the SQL Database to uncover the most popular names and trends. Navigate to the resource group using the SQL Database-Query Editor again.
 
@@ -168,7 +177,7 @@ GROUP BY y.year
 ORDER BY total_count DESC
 ```
 
-### 10. The Journey’s End
+### 11. The Journey’s End
 
 When you're done, delete the resources and the resource group:
 
