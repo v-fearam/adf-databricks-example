@@ -150,21 +150,32 @@ BEGIN
             nameSid,
             yearSid,
             locationSid,
-            count
+            count,
+            ROW_NUMBER() OVER (PARTITION BY sid ORDER BY sid) AS row_num
         FROM
             @FactBabyNames
-        GROUP BY
+    )
+    ,FilteredSource AS (
+        SELECT
             sid,
             nameSid,
             yearSid,
             locationSid,
             count
+        FROM
+            DeduplicatedSource
+        WHERE
+            row_num = 1
     )
 MERGE [dbo].[fact_babynames] AS target
-USING DeduplicatedSource AS source
+USING FilteredSource AS source
 ON (target.sid = source.sid)
 WHEN MATCHED THEN
-    UPDATE SET nameSid = source.nameSid, yearSid = source.yearSid, locationSid = source.locationSid, count = source.count
+    UPDATE SET 
+        nameSid = source.nameSid, 
+        yearSid = source.yearSid, 
+        locationSid = source.locationSid, 
+        count = source.count
 WHEN NOT MATCHED THEN
     INSERT (sid, nameSid, yearSid, locationSid, count)
     VALUES (source.sid, source.nameSid, source.yearSid, source.locationSid, source.count);
