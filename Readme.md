@@ -189,3 +189,11 @@ az group delete -n $RESOURCEGROUP -y
 az keyvault purge --name $DATABRICKS_KEY_VAULT_NAME
 az keyvault purge --name $ADF_KEY_VAULT_NAME
 ```
+
+## Contributions
+
+Please see our [Contributor guide](./CONTRIBUTING.md).
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact <opencode@microsoft.com> with any additional questions or comments.
+
+With :heart: from Microsoft Patterns & Practices, [Azure Architecture Center](https://aka.ms/architecture).
