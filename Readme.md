@@ -6,6 +6,7 @@ Welcome to the project setup guide for Contoso's data processing pipeline. This 
 
 Before we embark on this adventure, ensure you have the following tools ready:
 
+- **An Azure subscription**  [free account](https://azure.microsoft.com/free)
 - **Azure CLI**: Version 2.60.0 or higher. Install from [Azure CLI's official page](https://learn.microsoft.com/cli/azure/install-azure-cli%29).
 - **Bash or WSL**: A Bash-compatible shell environment is crucial. If you're on Windows, check out [Windows Subsystem for Linux (WSL)](https://learn.microsoft.com/windows/wsl/install%29).
 - **Databricks CLI**: Optional, but recommended for cluster manipulation. Install instructions are available [here](https://learn.microsoft.com/azure/databricks/dev-tools/cli/tutorial%29), version 0.219.0 or higher.

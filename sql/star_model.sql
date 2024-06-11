@@ -140,6 +140,20 @@ CREATE TYPE [dbo].[FactBabyNamesType] AS TABLE(
 )
 GO
 
+-- Alter the FactBabyNames table to add the foreign key constraint
+ALTER TABLE [dbo].[fact_babynames]
+ADD CONSTRAINT FK_fact_babynames_dim_names FOREIGN KEY (nameSid)
+REFERENCES [dbo].[dim_names] (sid);
+GO
+ALTER TABLE [dbo].[fact_babynames]
+ADD CONSTRAINT FK_fact_babynames_dim_year FOREIGN KEY (yearSid)
+REFERENCES [dbo].[dim_years] (sid);
+GO
+ALTER TABLE [dbo].[fact_babynames]
+ADD CONSTRAINT FK_fact_babynames_dim_location FOREIGN KEY (locationSid)
+REFERENCES [dbo].[dim_locations] (sid);
+GO
+
 CREATE PROCEDURE spOverwriteFactBabyNamesType
     @FactBabyNames [dbo].[FactBabyNamesType] READONLY
 AS
