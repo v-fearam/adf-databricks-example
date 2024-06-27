@@ -133,7 +133,6 @@ resource databriksLinkedService 'Microsoft.DataFactory/factories/linkedservices@
       newClusterNumOfWorker: 1
       newClusterVersion: '14.3.x-scala2.12'
       newClusterInitScripts: []
-      clusterOption: 'Fixed'
     }
   }
 }
